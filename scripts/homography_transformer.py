@@ -7,6 +7,7 @@ import cv2
 from cv_bridge import CvBridge, CvBridgeError
 
 from std_msgs.msg import String
+from geometry_msgs.ms import Point
 from sensor_msgs.msg import Image
 from ackermann_msgs.msg import AckermannDriveStamped
 from visualization_msgs.msg import Marker
@@ -20,10 +21,10 @@ from visual_servoing.msg import ConeLocation, ConeLocationPixel
 
 ######################################################
 ## DUMMY POINTS -- ENTER YOUR MEASUREMENTS HERE
-PTS_IMAGE_PLANE = [[-1, -1],
-                   [-1, -1],
-                   [-1, -1],
-                   [-1, -1]] # dummy points
+PTS_IMAGE_PLANE = [[301.0, 203.0],
+                   [327.0, 180.0],
+                   [514.0, 205.0],
+                   [430.0, 181.0]] # dummy points
 ######################################################
 
 # PTS_GROUND_PLANE units are in inches
@@ -31,10 +32,10 @@ PTS_IMAGE_PLANE = [[-1, -1],
 
 ######################################################
 ## DUMMY POINTS -- ENTER YOUR MEASUREMENTS HERE
-PTS_GROUND_PLANE = [[-1, -1],
-                    [-1, -1],
-                    [-1, -1],
-                    [-1, -1]] # dummy points
+PTS_GROUND_PLANE = [[63, 13],
+                    [140, 13],
+                    [63, -27],
+                    [140, -27]] # dummy points
 ######################################################
 
 METERS_PER_INCH = 0.0254
@@ -43,6 +44,7 @@ METERS_PER_INCH = 0.0254
 class HomographyTransformer:
     def __init__(self):
         self.cone_px_sub = rospy.Subscriber("/relative_cone_px", ConeLocationPixel, self.cone_detection_callback)
+        self.click_sub = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color_mouse_left", Point, self.click_callback)
         self.cone_pub = rospy.Publisher("/relative_cone", ConeLocation, queue_size=10)
 
         self.marker_pub = rospy.Publisher("/cone_marker",
@@ -76,8 +78,11 @@ class HomographyTransformer:
         relative_xy_msg.x_pos = x
         relative_xy_msg.y_pos = y
 
+        self.draw_marker(x, y, "laser")
         self.cone_pub.publish(relative_xy_msg)
 
+    def click_callback(self, data):
+        self.draw_marker(data.x, data.y, "laser")
 
     def transformUvToXy(self, u, v):
         """
