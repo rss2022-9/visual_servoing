@@ -46,6 +46,18 @@ class ConeDetector():
 
         image = self.bridge.imgmsg_to_cv2(image_msg, "bgr8")
 
+        #((x,y) (x2,y2))
+        bounding_box = cd_color_segmentation(image)
+
+        #draw the bounding box
+        cv2.rectangle(image,bounding_box[0],bounding_box[1],(255,0,0),3) 
+        cv2.imshow('image w bounding box',image)
+
+        pixel = ConeLocationPixel()
+        pixel.u = (bounding_box[0][0]+bounding_box[1][0])//2
+        pixel.v = bounding_box[1][1]
+        self.cone_pub(pixel)
+
         debug_msg = self.bridge.cv2_to_imgmsg(image, "bgr8")
         self.debug_pub.publish(debug_msg)
 
