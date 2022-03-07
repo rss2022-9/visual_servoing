@@ -1,3 +1,4 @@
+from psutil import OPENBSD
 import cv2
 import numpy as np
 import pdb
@@ -36,21 +37,28 @@ def cd_color_segmentation(img, template):
 	########## YOUR CODE STARTS HERE ##########
 	hsv_img = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
 
-	lower_orange = np.array([20,50,50])
-	upper_orange = np.array([40,255,255])
-	orange_filter = cv2.inRange(img,lower_orange, upper_orange)
-	#cv2.imshow('orange filter',orange_filter)
-
-	#opening: erosion followed by dilation
-	#kernel = np.ones(5,5)
-	#opening = cv2.morphologyEx(orange_filter, cv2.MORPH_OPEN, kernel)
-	#cv2.imshow('opening',opening)
+	lower_orange = np.array([10, 200, 100])
+	upper_orange = np.array([30, 255, 255])
+	orange_filter = cv2.inRange(hsv_img,lower_orange, upper_orange)
+	cv2.imshow('orange filter',orange_filter)
 
 
-	# Bitwise-AND mask and original image, note, rn not using the opening at all
-	res = cv2.bitwise_and(img,img, mask= orange_filter)
-	cv2.imshow('res',res)
-	contours,hierarchy = cv2.findContours(res,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)
+	#edit this section to generalize beyond the data set
+
+ 	#Bitwise-AND mask and original image, note, rn not using the opening at all
+	# res = cv2.bitwise_and(img,img, mask= orange_filter)
+	# cv2.imshow('res',res)
+
+	# resBGR = cv2.cvtColor(res,cv2.COLOR_HSV2BGR)
+	# imgray = cv2.cvtColor(resBGR, cv2.COLOR_BGR2GRAY)
+	# # ret, thresh = cv2.threshold(imgray, 127, 255, 0)
+
+	# #opening: erosion followed by dilation
+	# kernel = np.ones((5,5))
+	# opening = cv2.morphologyEx(imgray, cv2.MORPH_OPEN, kernel)
+	# cv2.imshow('opening',opening)
+
+	new_img, contours,hierarchy = cv2.findContours(orange_filter ,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)
 	contours.sort(key = cv2.contourArea, reverse = True)
 
 	#top left coordinate of rectangle is (x,y)
