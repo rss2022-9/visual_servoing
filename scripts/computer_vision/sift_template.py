@@ -39,6 +39,7 @@ def cd_sift_ransac(img, template):
 	# Minimum number of matching features
 	MIN_MATCH = 10
 	# Create SIFT
+	# opencv version==3.3.0.10
 	sift = cv2.xfeatures2d.SIFT_create()
 
 	# Compute SIFT on template and test image
@@ -47,7 +48,8 @@ def cd_sift_ransac(img, template):
 
 	# Find matches
 	bf = cv2.BFMatcher()
-	matches = bf.knnMatch(des1,des2,k=2)
+	matches = bf.knnMatch(des1,des2,k=2) # get #k best matches
+    # queryIdx trainIdx and distance for Dmatch object
 
 	# Find and store good matches
 	good = []
@@ -57,23 +59,37 @@ def cd_sift_ransac(img, template):
 
 	# If enough good matches, find bounding box
 	if len(good) > MIN_MATCH:
+		# extract the feature position for template and img
 		src_pts = np.float32([ kp1[m.queryIdx].pt for m in good ]).reshape(-1,1,2)
 		dst_pts = np.float32([ kp2[m.trainIdx].pt for m in good ]).reshape(-1,1,2)
 
-		# Create mask
-		M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+		# Create mask, find the transformation matrix between those feature pts
+		Matrix, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
 		matchesMask = mask.ravel().tolist()
 
+		# create a four pts grid with the size of template 
 		h, w = template.shape
 		pts = np.float32([ [0,0],[0,h-1],[w-1,h-1],[w-1,0] ]).reshape(-1,1,2)
 
 		########## YOUR CODE STARTS HERE ##########
-
 		x_min = y_min = x_max = y_max = 0
+		# apply transformation matrix to the template pts grid, now we have the bbox
+		dst = cv2.perspectiveTransform(pts,Matrix)
+		img2 = cv2.polylines(img,[np.int32(dst)],True,255,3, cv2.LINE_AA)
 
+		cv2.imshow("with frame", img2)
+		cv2.waitKey()
+		
+		# drop dimension of dst from 3 to 2
+		dst1 = np.array([dst[i,0] for i in range(4)])
+		x_min = np.int32(min(dst1[:,0]))
+		x_max = np.int32(max(dst1[:,0]))
+		y_min = np.int32(min(dst1[:,1]))
+		y_max = np.int32(max(dst1[:,1]))
 		########### YOUR CODE ENDS HERE ###########
 
 		# Return bounding box
+		print((x_min, y_min), (x_max, y_max))
 		return ((x_min, y_min), (x_max, y_max))
 	else:
 
@@ -91,6 +107,9 @@ def cd_template_matching(img, template):
 		bbox: ((x1, y1), (x2, y2)); the bounding box of the cone, unit in px
 				(x1, y1) is the bottom left of the bbox and (x2, y2) is the top right of the bbox
 	"""
+	methods = [cv2.TM_CCOEFF, cv2.TM_CCOEFF_NORMED, cv2.TM_CCORR,
+            cv2.TM_CCORR_NORMED, cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]
+
 	template_canny = cv2.Canny(template, 50, 200)
 
 	# Perform Canny Edge detection on test image
@@ -115,10 +134,15 @@ def cd_template_matching(img, template):
 		########## YOUR CODE STARTS HERE ##########
 		# Use OpenCV template matching functions to find the best match
 		# across template scales.
+		# Apply template Matching
+		res = cv2.matchTemplate(img_canny, resized_template, methods[1])
+		min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
 
 		# Remember to resize the bounding box using the highest scoring scale
 		# x1,y1 pixel will be accurate, but x2,y2 needs to be correctly scaled
-		bounding_box = ((0,0),(0,0))
+		top_left = max_loc
+		bottom_right = (top_left[0]+w, top_left[1]+h)
+		bounding_box = (top_left, bottom_right)
 		########### YOUR CODE ENDS HERE ###########
 
 	return bounding_box
