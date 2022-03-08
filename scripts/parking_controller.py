@@ -13,9 +13,10 @@ class ParkingController():
     Can be used in the simulator and on the real robot.
     """
     W_B = 0.325 # Wheel Base
-    G_E = 0.3 # good enough distance
+    DIST_THRESH = 0.1 # good enough distance
+    ANGL_THRESH = 2*np.pi/180
     SPEED_CONST = 0.2
-    DEG_THRESH = 2 * np.pi/180
+    
 
     def __init__(self):
         rospy.Subscriber("/relative_cone", ConeLocation,
@@ -26,7 +27,7 @@ class ParkingController():
             AckermannDriveStamped, queue_size=10)
         self.error_pub = rospy.Publisher("/parking_error",
             ParkingError, queue_size=10)
-        self.parking_distance = 0.75
+        self.parking_distance = 3
         self.relative_x = 0
         self.relative_y = 0
 
@@ -34,31 +35,34 @@ class ParkingController():
         x_pos = msg.x_pos
         y_pos = msg.y_pos
         drive_cmd = AckermannDriveStamped()
-        drive_cmd.drive.speed = self.dr_vel(x_pos,y_pos)
-        drive_cmd.drive.steering_angle = self.dr_ang(x_pos,y_pos)
+        drive_cmd.drive.speed = self.dr_vel(-y_pos,x_pos)
+        drive_cmd.drive.steering_angle = self.dr_ang(-y_pos,x_pos)
         self.error_publisher(x_pos,y_pos)
         self.drive_pub.publish(drive_cmd)
 
     def dr_ang(self,x,y):
-        infront = x > 0
-        indeg = np.arctan(x/self.parking_distance) < self.DEG_THRESH
-        if infront and indeg:
-            output = 0
-        else:
-            cr = self.parking_distance
-            tr = ((y**2)+(x**2)-(cr**2))/(2*y)
-            ang = np.arctan(self.W_B/tr)
-            output = max(min(ang,0.34),-0.34)
+        angl = np.arctan(x/y)
+        cr = self.parking_distance if abs(angl) <= self.ANGL_THRESH else (self.parking_distance+1)
+        tr = ((y**2)+(x**2)-(cr**2))/(2*x) if x != 0 else 0
+        ang = -np.arctan(self.W_B/tr)
+        output = max(min(ang,0.34),-0.34)
         return output
 
     def dr_vel(self,x,y):
-        d = np.linalg.norm((x,y)) - self.parking_distance
-        infront = x > 0
-        inrange = abs(d) <= self.G_E
-        if inrange and infront:
-            output = 0
+        angl = np.arctan(x/y)
+        dist = np.linalg.norm((x,y)) - self.parking_distance
+        adist = np.linalg.norm((x,y)) - (self.parking_distance+1)
+        indist = abs(dist) <= self.DIST_THRESH
+        inangl = abs(angl) <= self.ANGL_THRESH
+        if inangl:
+            if indist:
+                output = 0
+            else:
+                output = 2*np.sign(dist)
         else:
-            output = d #(self.SPEED_CONST*d)**3
+            output = 2*np.sign(adist)
+
+        #print(angl*180/np.pi)
         return output
 
     def error_publisher(self,x,y):
