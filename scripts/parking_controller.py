@@ -14,6 +14,7 @@ class ParkingController():
     """
     W_B = 0.325 # Wheel Base
     DIST_THRESH = 0.1 # good enough distance
+    OUT_THRESH = 2 # good enough distance
     ANGL_THRESH = 2*np.pi/180
     SPEED_CONST = 0.2
     
@@ -30,6 +31,7 @@ class ParkingController():
         self.parking_distance = 3
         self.relative_x = 0
         self.relative_y = 0
+        self.rev = False
 
     def relative_cone_callback(self, msg):
         x_pos = msg.x_pos
@@ -42,7 +44,7 @@ class ParkingController():
 
     def dr_ang(self,x,y):
         angl = np.arctan(x/y)
-        cr = self.parking_distance if abs(angl) <= self.ANGL_THRESH else (self.parking_distance+1)
+        cr = self.parking_distance
         tr = ((y**2)+(x**2)-(cr**2))/(2*x) if x != 0 else 0
         ang = -np.arctan(self.W_B/tr)
         output = max(min(ang,0.34),-0.34)
@@ -51,18 +53,18 @@ class ParkingController():
     def dr_vel(self,x,y):
         angl = np.arctan(x/y)
         dist = np.linalg.norm((x,y)) - self.parking_distance
-        adist = np.linalg.norm((x,y)) - (self.parking_distance+1)
-        indist = abs(dist) <= self.DIST_THRESH
         inangl = abs(angl) <= self.ANGL_THRESH
-        if inangl:
+        indist = abs(dist) <= self.DIST_THRESH
+        self.rev = (not self.rev) if (indist and (not inangl)) or ((dist > self.OUT_THRESH) and self.rev) else self.rev
+
+        if self.rev:
+            output = -1
+        else:
             if indist:
                 output = 0
             else:
-                output = 2*np.sign(dist)
-        else:
-            output = 2*np.sign(adist)
+                output = 1*np.sign(dist)
 
-        #print(angl*180/np.pi)
         return output
 
     def error_publisher(self,x,y):
