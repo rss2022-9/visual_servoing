@@ -20,15 +20,15 @@ class ParkingController():
     
 
     def __init__(self):
-        rospy.Subscriber("/relative_cone", ConeLocation,
-            self.relative_cone_callback)
+        rospy.Subscriber("/relative_cone", ConeLocation
+        self.relative_cone_callback)
 
         DRIVE_TOPIC = rospy.get_param("~drive_topic") 
         self.drive_pub = rospy.Publisher(DRIVE_TOPIC,
             AckermannDriveStamped, queue_size=10)
         self.error_pub = rospy.Publisher("/parking_error",
             ParkingError, queue_size=10)
-        self.parking_distance = 0.75
+        self.parking_distance = 3
         self.relative_x = 0
         self.relative_y = 0
         self.rev = False
