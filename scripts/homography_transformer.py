@@ -7,7 +7,7 @@ import cv2
 from cv_bridge import CvBridge, CvBridgeError
 
 from std_msgs.msg import String
-from geometry_msgs.ms import Point
+from geometry_msgs.msg import Point
 from sensor_msgs.msg import Image
 from ackermann_msgs.msg import AckermannDriveStamped
 from visualization_msgs.msg import Marker
@@ -21,10 +21,10 @@ from visual_servoing.msg import ConeLocation, ConeLocationPixel
 
 ######################################################
 ## DUMMY POINTS -- ENTER YOUR MEASUREMENTS HERE
-PTS_IMAGE_PLANE = [[301.0, 203.0],
-                   [327.0, 180.0],
-                   [514.0, 205.0],
-                   [430.0, 181.0]] # dummy points
+PTS_IMAGE_PLANE = [[526.0, 286.0],
+                   [240.0, 287.0],
+                   [292.0, 243.0],
+                   [442.0, 243.0]] # dummy points
 ######################################################
 
 # PTS_GROUND_PLANE units are in inches
@@ -32,10 +32,10 @@ PTS_IMAGE_PLANE = [[301.0, 203.0],
 
 ######################################################
 ## DUMMY POINTS -- ENTER YOUR MEASUREMENTS HERE
-PTS_GROUND_PLANE = [[63, 13],
-                    [140, 13],
-                    [63, -27],
-                    [140, -27]] # dummy points
+PTS_GROUND_PLANE = [[23.62, -9.75],
+                    [23.62, 9.75],
+                    [43.12, 9.75],
+                    [43.12, -9.75]] # dummy points
 ######################################################
 
 METERS_PER_INCH = 0.0254

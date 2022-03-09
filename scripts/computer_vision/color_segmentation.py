@@ -1,5 +1,6 @@
 from psutil import OPENBSD
 import cv2
+import os
 import numpy as np
 import pdb
 
@@ -24,7 +25,7 @@ def image_print(img):
 	cv2.waitKey(0)
 	cv2.destroyAllWindows()
 
-def cd_color_segmentation(img, template):
+def cd_color_segmentation(img):
 	"""
 	Implement the cone detection using color segmentation algorithm
 	Input:
@@ -36,33 +37,44 @@ def cd_color_segmentation(img, template):
 	"""
 	########## YOUR CODE STARTS HERE ##########
 	hsv_img = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
-
-	lower_orange = np.array([10, 200, 100])
-	upper_orange = np.array([30, 255, 255])
+        
+	lower_orange = np.array([5, 150, 150])  # 22-35 90-100 80-100
+	upper_orange = np.array([15, 255, 255])
+	# lower_orange = np.array([10, 90, 80])
+	# upper_orange = np.array([22, 100,100])
 	orange_filter = cv2.inRange(hsv_img,lower_orange, upper_orange)
-	cv2.imshow('orange filter',orange_filter)
+	#cv2.imshow('orange filter',orange_filter)
 
+	# TODO: note this crop the image and only for line following
+	shape = orange_filter.shape
+	crop_start = int(5*shape[0]/6)
+	for i in range(crop_start,shape[0]):
+		orange_filter[i,:] =  0
+	for i in range(0,int(shape[0])/2):
+		orange_filter[i,:] = 0
 
 	#edit this section to generalize beyond the data set
-
- 	#Bitwise-AND mask and original image, note, rn not using the opening at all
-	# res = cv2.bitwise_and(img,img, mask= orange_filter)
+	#Bitwise-AND mask and original image, note, rn not using the opening at all
+	res = cv2.bitwise_and(img,img, mask= orange_filter)
 	# cv2.imshow('res',res)
+	resBGR = cv2.cvtColor(res,cv2.COLOR_HSV2BGR)
+	imgray = cv2.cvtColor(resBGR, cv2.COLOR_BGR2GRAY)
+	ret, thresh = cv2.threshold(imgray, 127, 255, 0)
 
-	# resBGR = cv2.cvtColor(res,cv2.COLOR_HSV2BGR)
-	# imgray = cv2.cvtColor(resBGR, cv2.COLOR_BGR2GRAY)
-	# # ret, thresh = cv2.threshold(imgray, 127, 255, 0)
-
+	# print(thresh)
 	# #opening: erosion followed by dilation
-	# kernel = np.ones((5,5))
-	# opening = cv2.morphologyEx(imgray, cv2.MORPH_OPEN, kernel)
+	kernel = np.ones((5,5))
+	opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
 	# cv2.imshow('opening',opening)
 
-	new_img, contours,hierarchy = cv2.findContours(orange_filter ,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)
+	new_img, contours,hierarchy = cv2.findContours(opening ,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)
 	contours.sort(key = cv2.contourArea, reverse = True)
-
+	# print(len(contours))
 	#top left coordinate of rectangle is (x,y)
-	x,y,w,h = cv2.boundingRect(contours[0])
+	if (len(contours)==0):
+		x,y,w,h = 0, 0, 0, 0
+	else:
+		x,y,w,h = cv2.boundingRect(contours[0])
 
 	bounding_box = ((x,y),(x+w,y+h))
 
