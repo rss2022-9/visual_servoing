@@ -25,7 +25,7 @@ def image_print(img):
 	cv2.waitKey(0)
 	cv2.destroyAllWindows()
 
-def cd_color_segmentation(img):
+def cd_color_segmentation(img, template="optional"):
 	"""
 	Implement the cone detection using color segmentation algorithm
 	Input:
@@ -40,8 +40,8 @@ def cd_color_segmentation(img):
         
 	lower_orange = np.array([5, 150, 150])  # 22-35 90-100 80-100
 	upper_orange = np.array([15, 255, 255])
-	# lower_orange = np.array([10, 90, 80])
-	# upper_orange = np.array([22, 100,100])
+	# lower_orange = np.array([10, 150, 150])
+	# upper_orange = np.array([30, 255,255])
 	orange_filter = cv2.inRange(hsv_img,lower_orange, upper_orange)
 	#cv2.imshow('orange filter',orange_filter)
 
